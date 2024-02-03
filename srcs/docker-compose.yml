@@ -1,0 +1,59 @@
+version: '3'
+
+networks:
+  mynetwork:
+
+services:
+  db:
+    build:
+      context: ./requirements/mariadb
+      args:
+        SQL_ROOT_PASSWORD: $SQL_ROOT_PASSWORD
+        SQL_DATABASE: 
+        SQL_USER: $SQL_USER
+        SQL_PASSWORD: $SQL_PASSWORD
+    ports:
+      - "3306:3306"
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - mynetwork
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    depends_on:
+      - db
+    # build: ./requirements/wordpress
+    build:
+      context: ./requirements/wordpress
+      args:
+        SQL_ROOT_PASSWORD: "wordpress"
+        SQL_DATABASE: "wordpress"
+        SQL_USER: "wordpress"
+        SQL_PASSWORD: "wordpress"
+    ports:
+      - "9000:9000"
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - mynetwork
+    volumes:
+      - wordpress:/var/www/wordpress
+
+  nginx:
+    build: ./requirements/nginx/
+    ports:
+      - "443:443"
+    depends_on:
+      - wordpress
+    networks:
+      - mynetwork
+    volumes:
+      - wordpress:/var/www/wordpress
+
+volumes:
+    db_data:
+    wordpress:
